@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { getPropertyById, getPropertyFinancials, getPropertyReservations } from "@/lib/data";
-import { parsePeriodFromParams } from "@/components/period-selector";
+import { parsePeriodFromParams } from "@/lib/period";
 import { PeriodSelector } from "@/components/period-selector";
 import { PropertyHeader } from "@/components/property-header";
 import { PropertyFinancials } from "@/components/property-financials";

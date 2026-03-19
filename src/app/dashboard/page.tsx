@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { getDashboardData } from "@/lib/data";
-import { parsePeriodFromParams } from "@/components/period-selector";
+import { parsePeriodFromParams } from "@/lib/period";
 import { PeriodSelector } from "@/components/period-selector";
 import { DashboardCards } from "@/components/dashboard-cards";
 import { PropertiesTable } from "@/components/properties-table";
