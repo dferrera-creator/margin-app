@@ -1,0 +1,110 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Property {
+  id                        String   @id @default(cuid())
+  guestyListingId           String?  @unique
+  nickname                  String
+  title                     String?
+  active                    Boolean  @default(true)
+  // "commission" or "master_lease"
+  businessModel             String   @default("commission")
+  // Commission rate as decimal (e.g. 0.20 for 20%)
+  commissionRate            Float?
+  // Fixed monthly owner payout for master lease properties
+  fixedOwnerPayoutMonthly   Float?
+  // Default expense assumptions per property (configurable)
+  internetMonthly           Float    @default(0)
+  hoaMonthly                Float    @default(0)
+  defaultElectricityPerNight Float   @default(0)
+  defaultWaterPerNight      Float    @default(0)
+  defaultGasPerNight        Float    @default(0)
+  defaultHousekeepingPerStay Float   @default(0)
+  defaultLaundryPerStay     Float    @default(0)
+  notes                     String?
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+
+  reservations             Reservation[]
+  financialPeriodOverrides FinancialPeriodOverride[]
+
+  @@map("properties")
+}
+
+model Reservation {
+  id                  String   @id @default(cuid())
+  guestyReservationId String?  @unique
+  propertyId          String
+  guestName           String?
+  checkIn             DateTime
+  checkOut            DateTime
+  nightsBooked        Int
+  // Each reservation counts as 1 stay
+  staysBooked         Int      @default(1)
+  bookingDate         DateTime?
+  // confirmed, canceled, checked_in, checked_out, inquiry
+  status              String   @default("confirmed")
+  payoutAmount        Float    @default(0)
+  // Actual owner payout from Guesty if available
+  ownerPayoutAmount   Float?
+  // Booking source/channel (e.g. Airbnb, Booking.com, Direct)
+  source              String?
+  // Raw Guesty payload for troubleshooting
+  rawPayload          String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+  @@index([checkIn])
+  @@index([checkOut])
+  @@map("reservations")
+}
+
+model FinancialPeriodOverride {
+  id                   String   @id @default(cuid())
+  propertyId           String
+  periodStart          DateTime
+  periodEnd            DateTime
+  // YYYY-MM key for quick monthly lookups
+  monthKey             String?
+  electricityOverride  Float?
+  waterOverride        Float?
+  gasOverride          Float?
+  internetOverride     Float?
+  hoaOverride          Float?
+  housekeepingOverride Float?
+  laundryOverride      Float?
+  notes                String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([propertyId, monthKey])
+  @@index([propertyId])
+  @@map("financial_period_overrides")
+}
+
+model SyncJob {
+  id               String   @id @default(cuid())
+  source           String   @default("guesty")
+  // "listings", "reservations", "payouts"
+  syncType         String
+  // "pending", "running", "completed", "failed"
+  status           String   @default("pending")
+  startedAt        DateTime?
+  finishedAt       DateTime?
+  recordsProcessed Int      @default(0)
+  errorLog         String?
+  createdAt        DateTime @default(now())
+
+  @@map("sync_jobs")
+}
