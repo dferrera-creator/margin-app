@@ -101,6 +101,11 @@ export async function syncReservations(
     for (const raw of rawReservations) {
       const mapped = mapReservation(raw);
 
+      // Skip reservations with no listing ID (e.g. inquiries, cancelled without listing)
+      if (!mapped.guestyListingId) {
+        continue;
+      }
+
       // Find the property by guesty listing ID
       const property = await prisma.property.findUnique({
         where: { guestyListingId: mapped.guestyListingId },

@@ -102,7 +102,7 @@ export interface GuestyListing {
 /** Raw Guesty reservation response shape (partial — extend as needed) */
 export interface GuestyReservation {
   _id: string;
-  listingId: string;
+  listingId?: string;
   guestName?: string;
   checkIn?: string;
   checkOut?: string;

@@ -63,7 +63,7 @@ export function mapReservation(raw: GuestyReservation): MappedReservation {
 
   return {
     guestyReservationId: raw._id,
-    guestyListingId: raw.listingId,
+    guestyListingId: raw.listingId || "",
     guestName: raw.guestName || null,
     checkIn,
     checkOut,
