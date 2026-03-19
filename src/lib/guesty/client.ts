@@ -29,12 +29,12 @@ async function getAccessToken(): Promise<string> {
     return cachedToken.token;
   }
 
-  const apiKey = process.env.GUESTY_API_KEY;
-  const apiSecret = process.env.GUESTY_API_SECRET;
+  const apiKey = process.env.GUESTY_CLIENT_ID;
+  const apiSecret = process.env.GUESTY_CLIENT_SECRET;
 
   if (!apiKey || !apiSecret) {
     throw new Error(
-      "Guesty API credentials not configured. Set GUESTY_API_KEY and GUESTY_API_SECRET."
+      "Guesty API credentials not configured. Set GUESTY_CLIENT_ID and GUESTY_CLIENT_SECRET."
     );
   }
 
