@@ -74,6 +74,7 @@ export function mapReservation(raw: GuestyReservation): MappedReservation {
     // Primary payout field — try multiple Guesty money fields
     payoutAmount:
       raw.money?.hostPayout ??
+      raw.money?.totalPaid ??
       raw.money?.fareAccommodation ??
       raw.money?.netIncome ??
       raw.money?.subTotalPrice ??

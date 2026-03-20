@@ -190,19 +190,8 @@ export async function fetchReservations(
         "filters[checkOut][$gte]": from,
         "filters[checkOut][$lte]": to,
         sort: "checkOut",
-        fields: [
-          "_id",
-          "listingId",
-          "checkIn",
-          "checkOut",
-          "nightsCount",
-          "status",
-          "source",
-          "bookedAt",
-          "money",
-          "guest",
-          "guestName",
-        ].join(" "),
+        // No fields filter — let Guesty return the full object
+        // so we get all money sub-fields, guest info, etc.
       }
     );
     all.push(...data.results);
