@@ -64,15 +64,20 @@ export function mapReservation(raw: GuestyReservation): MappedReservation {
   return {
     guestyReservationId: raw._id,
     guestyListingId: raw.listingId || "",
-    guestName: raw.guestName || null,
+    guestName: raw.guest?.fullName || raw.guestName || null,
     checkIn,
     checkOut,
     nightsBooked,
     staysBooked: 1, // Each reservation = 1 stay
     bookingDate: raw.bookedAt ? new Date(raw.bookedAt) : null,
     status: raw.status || "confirmed",
-    // Primary payout field — adjust if your Guesty uses a different field
-    payoutAmount: raw.money?.hostPayout ?? raw.money?.fareAccommodation ?? 0,
+    // Primary payout field — try multiple Guesty money fields
+    payoutAmount:
+      raw.money?.hostPayout ??
+      raw.money?.fareAccommodation ??
+      raw.money?.netIncome ??
+      raw.money?.subTotalPrice ??
+      0,
     // Owner revenue — may or may not be present
     ownerPayoutAmount: raw.money?.ownerRevenue ?? null,
     source: raw.source || null,

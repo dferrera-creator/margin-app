@@ -104,6 +104,12 @@ export interface GuestyReservation {
   _id: string;
   listingId?: string;
   guestName?: string;
+  guest?: {
+    fullName?: string;
+    firstName?: string;
+    lastName?: string;
+    [key: string]: unknown;
+  };
   checkIn?: string;
   checkOut?: string;
   nightsCount?: number;
@@ -113,6 +119,8 @@ export interface GuestyReservation {
     ownerRevenue?: number;
     totalPaid?: number;
     fareAccommodation?: number;
+    netIncome?: number;
+    subTotalPrice?: number;
     // Guesty may nest financial fields differently
     [key: string]: unknown;
   };
@@ -182,6 +190,19 @@ export async function fetchReservations(
         "filters[checkOut][$gte]": from,
         "filters[checkOut][$lte]": to,
         sort: "checkOut",
+        fields: [
+          "_id",
+          "listingId",
+          "checkIn",
+          "checkOut",
+          "nightsCount",
+          "status",
+          "source",
+          "bookedAt",
+          "money",
+          "guest",
+          "guestName",
+        ].join(" "),
       }
     );
     all.push(...data.results);
