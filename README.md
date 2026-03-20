@@ -8,8 +8,8 @@ Internal financial dashboard for Delmar, a short-term rental property management
 # Install dependencies
 npm install
 
-# Set up database (SQLite)
-npx prisma db push
+# Set up database (PostgreSQL)
+npx prisma migrate deploy
 
 # Seed with example data (4 properties, 49 reservations)
 npm run db:seed
@@ -24,7 +24,7 @@ Open http://localhost:3000
 
 - **Next.js 14** (App Router) + TypeScript
 - **Tailwind CSS** + shadcn/ui components
-- **Prisma** ORM + SQLite (swap to PostgreSQL for production)
+- **Prisma** ORM + PostgreSQL
 - **Recharts** for charts
 - **Zod** for validation (ready for use in forms)
 
@@ -139,7 +139,7 @@ npm run db:reset     # Reset database
 1. Each reservation = 1 stay (for housekeeping/laundry estimation)
 2. Reservations overlapping a period are included in that period's metrics
 3. Owner payout for commission = actual if imported, else derived from rate
-4. SQLite for MVP; swap `DATABASE_URL` and schema provider for PostgreSQL
+4. PostgreSQL for production (Railway); set `DATABASE_URL` env var
 5. No auth in MVP — internal use only
 
 ## TODO (Phase 2)
@@ -152,5 +152,5 @@ npm run db:reset     # Reset database
 - [ ] Bulk expense override import
 - [ ] Multi-month comparison view
 - [ ] Email/Slack alerts for negative margin properties
-- [ ] PostgreSQL migration for production
+- [x] PostgreSQL migration for production
 - [ ] Automated Guesty sync on schedule (cron)
