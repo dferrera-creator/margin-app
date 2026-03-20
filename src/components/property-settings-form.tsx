@@ -30,6 +30,10 @@ export function PropertySettingsForm({ property }: { property: Property }) {
     defaultGasPerNight: property.defaultGasPerNight,
     defaultHousekeepingPerStay: property.defaultHousekeepingPerStay,
     defaultLaundryPerStay: property.defaultLaundryPerStay,
+    pmsSoftwareMonthly: property.pmsSoftwareMonthly,
+    autorankMonthly: property.autorankMonthly,
+    rmsSoftwareMonthly: property.rmsSoftwareMonthly,
+    messagingSoftwareMonthly: property.messagingSoftwareMonthly,
     notes: property.notes ?? "",
   });
 
@@ -54,6 +58,10 @@ export function PropertySettingsForm({ property }: { property: Property }) {
         defaultGasPerNight: Number(form.defaultGasPerNight),
         defaultHousekeepingPerStay: Number(form.defaultHousekeepingPerStay),
         defaultLaundryPerStay: Number(form.defaultLaundryPerStay),
+        pmsSoftwareMonthly: Number(form.pmsSoftwareMonthly),
+        autorankMonthly: Number(form.autorankMonthly),
+        rmsSoftwareMonthly: Number(form.rmsSoftwareMonthly),
+        messagingSoftwareMonthly: Number(form.messagingSoftwareMonthly),
         notes: form.notes || undefined,
       });
       setSaved(true);
@@ -200,6 +208,42 @@ export function PropertySettingsForm({ property }: { property: Property }) {
                 step="0.01"
                 value={form.hoaMonthly}
                 onChange={(e) => set("hoaMonthly", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label className="text-xs">PMS Software / Month ($)</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={form.pmsSoftwareMonthly}
+                onChange={(e) => set("pmsSoftwareMonthly", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Autorank / Month ($)</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={form.autorankMonthly}
+                onChange={(e) => set("autorankMonthly", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label className="text-xs">RMS Software / Month ($)</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={form.rmsSoftwareMonthly}
+                onChange={(e) => set("rmsSoftwareMonthly", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Messaging Software / Month ($)</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={form.messagingSoftwareMonthly}
+                onChange={(e) => set("messagingSoftwareMonthly", e.target.value)}
               />
             </div>
           </div>

@@ -91,6 +91,10 @@ export function calculateExpenses(
   // Fixed monthly costs are prorated for custom date ranges
   const estInternet = defaults.internetMonthly * prorationFactor;
   const estHoa = defaults.hoaMonthly * prorationFactor;
+  const estPmsSoftware = defaults.pmsSoftwareMonthly * prorationFactor;
+  const estAutorank = defaults.autorankMonthly * prorationFactor;
+  const estRmsSoftware = defaults.rmsSoftwareMonthly * prorationFactor;
+  const estMessagingSoftware = defaults.messagingSoftwareMonthly * prorationFactor;
 
   return {
     housekeeping: {
@@ -128,6 +132,26 @@ export function calculateExpenses(
       override: overrides.hoaOverride,
       final: round2(overrides.hoaOverride ?? estHoa),
     },
+    pmsSoftware: {
+      estimated: round2(estPmsSoftware),
+      override: overrides.pmsSoftwareOverride,
+      final: round2(overrides.pmsSoftwareOverride ?? estPmsSoftware),
+    },
+    autorank: {
+      estimated: round2(estAutorank),
+      override: overrides.autorankOverride,
+      final: round2(overrides.autorankOverride ?? estAutorank),
+    },
+    rmsSoftware: {
+      estimated: round2(estRmsSoftware),
+      override: overrides.rmsSoftwareOverride,
+      final: round2(overrides.rmsSoftwareOverride ?? estRmsSoftware),
+    },
+    messagingSoftware: {
+      estimated: round2(estMessagingSoftware),
+      override: overrides.messagingSoftwareOverride,
+      final: round2(overrides.messagingSoftwareOverride ?? estMessagingSoftware),
+    },
   };
 }
 
@@ -140,7 +164,11 @@ export function totalExpenses(expenses: ExpenseBreakdown): number {
       expenses.water.final +
       expenses.gas.final +
       expenses.internet.final +
-      expenses.hoa.final
+      expenses.hoa.final +
+      expenses.pmsSoftware.final +
+      expenses.autorank.final +
+      expenses.rmsSoftware.final +
+      expenses.messagingSoftware.final
   );
 }
 

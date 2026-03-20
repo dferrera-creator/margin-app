@@ -21,6 +21,10 @@ export async function updateProperty(
     defaultGasPerNight?: number;
     defaultHousekeepingPerStay?: number;
     defaultLaundryPerStay?: number;
+    pmsSoftwareMonthly?: number;
+    autorankMonthly?: number;
+    rmsSoftwareMonthly?: number;
+    messagingSoftwareMonthly?: number;
     notes?: string;
     active?: boolean;
   }
@@ -49,6 +53,10 @@ export async function saveExpenseOverrides(
     hoaOverride?: number | null;
     housekeepingOverride?: number | null;
     laundryOverride?: number | null;
+    pmsSoftwareOverride?: number | null;
+    autorankOverride?: number | null;
+    rmsSoftwareOverride?: number | null;
+    messagingSoftwareOverride?: number | null;
     notes?: string;
   }
 ) {

@@ -171,6 +171,10 @@ async function getOverrides(
       gasOverride: null,
       internetOverride: null,
       hoaOverride: null,
+      pmsSoftwareOverride: null,
+      autorankOverride: null,
+      rmsSoftwareOverride: null,
+      messagingSoftwareOverride: null,
     };
   }
 
@@ -182,6 +186,10 @@ async function getOverrides(
     gasOverride: override.gasOverride,
     internetOverride: override.internetOverride,
     hoaOverride: override.hoaOverride,
+    pmsSoftwareOverride: override.pmsSoftwareOverride,
+    autorankOverride: override.autorankOverride,
+    rmsSoftwareOverride: override.rmsSoftwareOverride,
+    messagingSoftwareOverride: override.messagingSoftwareOverride,
   };
 }
 
@@ -193,6 +201,10 @@ function extractDefaults(property: {
   defaultGasPerNight: number;
   internetMonthly: number;
   hoaMonthly: number;
+  pmsSoftwareMonthly: number;
+  autorankMonthly: number;
+  rmsSoftwareMonthly: number;
+  messagingSoftwareMonthly: number;
 }): PropertyExpenseDefaults {
   return {
     defaultHousekeepingPerStay: property.defaultHousekeepingPerStay,
@@ -202,6 +214,10 @@ function extractDefaults(property: {
     defaultGasPerNight: property.defaultGasPerNight,
     internetMonthly: property.internetMonthly,
     hoaMonthly: property.hoaMonthly,
+    pmsSoftwareMonthly: property.pmsSoftwareMonthly,
+    autorankMonthly: property.autorankMonthly,
+    rmsSoftwareMonthly: property.rmsSoftwareMonthly,
+    messagingSoftwareMonthly: property.messagingSoftwareMonthly,
   };
 }
 

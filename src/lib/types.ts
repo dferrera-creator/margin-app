@@ -29,6 +29,10 @@ export interface ExpenseBreakdown {
   gas: { estimated: number; override: number | null; final: number };
   internet: { estimated: number; override: number | null; final: number };
   hoa: { estimated: number; override: number | null; final: number };
+  pmsSoftware: { estimated: number; override: number | null; final: number };
+  autorank: { estimated: number; override: number | null; final: number };
+  rmsSoftware: { estimated: number; override: number | null; final: number };
+  messagingSoftware: { estimated: number; override: number | null; final: number };
 }
 
 /** Full financial summary for a property in a period */
@@ -65,6 +69,10 @@ export interface PropertyExpenseDefaults {
   defaultGasPerNight: number;
   internetMonthly: number;
   hoaMonthly: number;
+  pmsSoftwareMonthly: number;
+  autorankMonthly: number;
+  rmsSoftwareMonthly: number;
+  messagingSoftwareMonthly: number;
 }
 
 /** Override values for a period (null = use estimate) */
@@ -76,6 +84,10 @@ export interface PeriodOverrides {
   gasOverride: number | null;
   internetOverride: number | null;
   hoaOverride: number | null;
+  pmsSoftwareOverride: number | null;
+  autorankOverride: number | null;
+  rmsSoftwareOverride: number | null;
+  messagingSoftwareOverride: number | null;
 }
 
 /** Dashboard-level aggregated summary */

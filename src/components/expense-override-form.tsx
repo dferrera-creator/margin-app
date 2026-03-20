@@ -31,6 +31,10 @@ const EXPENSE_CATEGORIES = [
   { key: "hoa", label: "HOA Fees", unit: "fixed monthly" },
   { key: "housekeeping", label: "Housekeeping", unit: "per stay" },
   { key: "laundry", label: "Laundry", unit: "per stay" },
+  { key: "pmsSoftware", label: "PMS Software", unit: "fixed monthly" },
+  { key: "autorank", label: "Autorank", unit: "fixed monthly" },
+  { key: "rmsSoftware", label: "RMS Software", unit: "fixed monthly" },
+  { key: "messagingSoftware", label: "Messaging Software", unit: "fixed monthly" },
 ] as const;
 
 export function ExpenseOverrideForm({ propertyId, monthKey, financials }: Props) {

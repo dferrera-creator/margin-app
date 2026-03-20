@@ -54,10 +54,24 @@ export function PropertyFinancials({
           <CardTitle className="text-base">Operating Expenses</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {Object.entries(f.expenses).map(([key, val]) => (
+          {Object.entries(f.expenses).map(([key, val]) => {
+            const labels: Record<string, string> = {
+              housekeeping: "Housekeeping",
+              laundry: "Laundry",
+              electricity: "Electricity",
+              water: "Water",
+              gas: "Gas",
+              internet: "Internet",
+              hoa: "HOA Fees",
+              pmsSoftware: "PMS Software",
+              autorank: "Autorank",
+              rmsSoftware: "RMS Software",
+              messagingSoftware: "Messaging Software",
+            };
+            return (
             <div key={key} className="flex justify-between items-center">
-              <span className="text-sm capitalize">
-                {key.replace(/([A-Z])/g, " $1").trim()}
+              <span className="text-sm">
+                {labels[key] || key.replace(/([A-Z])/g, " $1").trim()}
               </span>
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium">
@@ -77,7 +91,8 @@ export function PropertyFinancials({
                 )}
               </div>
             </div>
-          ))}
+            );
+          })}
           <Separator />
           <Row
             label="Total Operating Expenses"
