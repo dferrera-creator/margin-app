@@ -121,9 +121,20 @@ export interface GuestyReservation {
     fareAccommodation?: number;
     netIncome?: number;
     subTotalPrice?: number;
-    // Guesty may nest financial fields differently
+    balanceDue?: number;
+    hostServiceFee?: number;
+    totalTaxes?: number;
+    hostPayoutUsd?: number;
+    payments?: Array<{
+      amount?: number;
+      currency?: string;
+      status?: string;
+      paidAt?: string;
+      [key: string]: unknown;
+    }>;
     [key: string]: unknown;
   };
+  confirmationCode?: string;
   source?: string;
   bookedAt?: string;
   [key: string]: unknown;
@@ -186,12 +197,38 @@ export async function fetchReservations(
       {
         skip: String(skip),
         limit: String(limit),
-        // Filter by checkout date range to capture all revenue in the period
-        "filters[checkOut][$gte]": from,
-        "filters[checkOut][$lte]": to,
+        // Guesty only returns _id, integration, accountId, guestId, listingId,
+        // listing, guest by default. Financial and date fields must be explicitly requested.
+        fields: [
+          "_id",
+          "listingId",
+          "guestName",
+          "guest",
+          "checkIn",
+          "checkOut",
+          "nightsCount",
+          "status",
+          "money.hostPayout",
+          "money.ownerRevenue",
+          "money.totalPaid",
+          "money.fareAccommodation",
+          "money.netIncome",
+          "money.subTotalPrice",
+          "money.balanceDue",
+          "money.payments",
+          "money.hostServiceFee",
+          "money.totalTaxes",
+          "money.hostPayoutUsd",
+          "source",
+          "bookedAt",
+          "confirmationCode",
+        ].join(" "),
+        // Use documented JSON array filter format
+        filters: JSON.stringify([
+          { field: "checkOut", operator: "$gte", value: from },
+          { field: "checkOut", operator: "$lte", value: to },
+        ]),
         sort: "checkOut",
-        // No fields filter — let Guesty return the full object
-        // so we get all money sub-fields, guest info, etc.
       }
     );
     all.push(...data.results);

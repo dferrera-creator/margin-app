@@ -115,7 +115,27 @@ function extractPayout(money: Record<string, unknown>): number {
     }
   }
 
-  // Fallback: scan all keys for a positive number
+  // Fallback: sum confirmed payments from money.payments array
+  const payments = money.payments;
+  if (Array.isArray(payments) && payments.length > 0) {
+    const confirmedSum = payments
+      .filter(
+        (p: Record<string, unknown>) =>
+          typeof p.amount === "number" &&
+          p.amount > 0 &&
+          p.status !== "refunded" &&
+          p.status !== "failed"
+      )
+      .reduce(
+        (sum: number, p: Record<string, unknown>) => sum + (p.amount as number),
+        0
+      );
+    if (confirmedSum > 0) {
+      return confirmedSum;
+    }
+  }
+
+  // Last resort: scan all keys for a positive number
   for (const [, val] of Object.entries(money)) {
     if (typeof val === "number" && val > 0) {
       return val;

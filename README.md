@@ -99,8 +99,8 @@ Fixed monthly costs (internet, HOA) are prorated for custom date ranges using ca
 
 Set environment variables:
 ```
-GUESTY_API_KEY=your_key
-GUESTY_API_SECRET=your_secret
+GUESTY_CLIENT_ID=your_client_id
+GUESTY_CLIENT_SECRET=your_client_secret
 ```
 
 Then use the Sync buttons on the Settings page.
