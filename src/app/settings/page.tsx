@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Label } from "@/components/ui/label";
 import { RefreshCw, Database, CheckCircle2, XCircle, Clock } from "lucide-react";
 
 interface SyncJob {
@@ -30,6 +31,15 @@ export default function SettingsPage() {
   const [syncResult, setSyncResult] = useState<string | null>(null);
   const [syncJobs, setSyncJobs] = useState<SyncJob[]>([]);
 
+  // Default date range: last 1 month
+  const today = new Date();
+  const oneMonthAgo = new Date(today);
+  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+  const [fromDate, setFromDate] = useState(
+    oneMonthAgo.toISOString().split("T")[0]
+  );
+  const [toDate, setToDate] = useState(today.toISOString().split("T")[0]);
+
   const loadSyncJobs = async () => {
     const res = await fetch("/api/sync/guesty");
     if (res.ok) {
@@ -45,16 +55,23 @@ export default function SettingsPage() {
   const handleSync = (type: "listings" | "reservations") => {
     startTransition(async () => {
       setSyncResult(null);
+      const payload: Record<string, string> = { type };
+      if (type === "reservations") {
+        payload.from = fromDate;
+        payload.to = toDate;
+      }
       const res = await fetch("/api/sync/guesty", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       setSyncResult(
         data.error
           ? `Error: ${data.error}`
-          : `${type} sync completed. ${data.recordsProcessed} records processed.`
+          : type === "reservations"
+            ? `Reservations sync completed. ${data.recordsProcessed} records processed (${data.from} to ${data.to}).`
+            : `Listings sync completed. ${data.recordsProcessed} records processed.`
       );
       loadSyncJobs();
     });
@@ -91,14 +108,42 @@ export default function SettingsPage() {
                 />
                 Sync Listings
               </Button>
-              <Button
-                onClick={() => handleSync("reservations")}
-                disabled={isPending}
-                variant="outline"
-              >
-                <Database className="h-4 w-4 mr-2" />
-                Sync Reservations
-              </Button>
+            </div>
+
+            <Separator />
+
+            <div className="space-y-3">
+              <p className="text-sm font-medium">Reservation Date Range</p>
+              <div className="flex gap-3 items-end">
+                <div className="space-y-1">
+                  <Label htmlFor="sync-from" className="text-xs text-muted-foreground">From</Label>
+                  <input
+                    id="sync-from"
+                    type="date"
+                    value={fromDate}
+                    onChange={(e) => setFromDate(e.target.value)}
+                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="sync-to" className="text-xs text-muted-foreground">To</Label>
+                  <input
+                    id="sync-to"
+                    type="date"
+                    value={toDate}
+                    onChange={(e) => setToDate(e.target.value)}
+                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  />
+                </div>
+                <Button
+                  onClick={() => handleSync("reservations")}
+                  disabled={isPending}
+                  variant="outline"
+                >
+                  <Database className="h-4 w-4 mr-2" />
+                  Sync Reservations
+                </Button>
+              </div>
             </div>
             {syncResult && (
               <p

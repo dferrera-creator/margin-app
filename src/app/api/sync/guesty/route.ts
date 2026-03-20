@@ -14,11 +14,11 @@ export async function POST(request: Request) {
     }
 
     if (type === "reservations") {
-      // Default: sync last 3 months of reservations
-      const from = format(subMonths(new Date(), 3), "yyyy-MM-dd");
-      const to = format(new Date(), "yyyy-MM-dd");
+      // Use provided date range, or default to last 1 month
+      const from = body.from || format(subMonths(new Date(), 1), "yyyy-MM-dd");
+      const to = body.to || format(new Date(), "yyyy-MM-dd");
       const result = await syncReservations(from, to);
-      return NextResponse.json(result);
+      return NextResponse.json({ ...result, from, to });
     }
 
     return NextResponse.json({ error: "Invalid sync type" }, { status: 400 });
