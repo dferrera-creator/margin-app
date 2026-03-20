@@ -24,13 +24,18 @@ export async function GET(request: Request) {
   });
 
   // Parse rawPayload so the JSON is readable
-  const results = reservations.map((r) => ({
-    id: r.id,
-    guestyReservationId: r.guestyReservationId,
-    storedGuestName: r.guestName,
-    storedPayout: r.payoutAmount,
-    rawFromGuesty: r.rawPayload ? JSON.parse(r.rawPayload) : null,
-  }));
+  const results = reservations.map((r) => {
+    const raw = r.rawPayload ? JSON.parse(r.rawPayload) : null;
+    return {
+      id: r.id,
+      guestyReservationId: r.guestyReservationId,
+      storedGuestName: r.guestName,
+      storedPayout: r.payoutAmount,
+      // Show money object keys and values for debugging
+      moneyObject: raw?.money ?? null,
+      moneyKeys: raw?.money ? Object.keys(raw.money) : [],
+    };
+  });
 
   return NextResponse.json({ results });
 }
