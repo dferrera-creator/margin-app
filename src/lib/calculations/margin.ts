@@ -80,9 +80,9 @@ export function calculatePropertyFinancials(
  * Calculate owner payout based on business model.
  *
  * Commission-based:
- *   1. Use actual owner payout from imported data if available
- *   2. Otherwise: owner_payout = gross_payout * (1 - commission_rate)
- *      (i.e., Delmar keeps commission_rate %, owner gets the rest)
+ *   Always derived from system settings: owner gets (1 - commission_rate) of gross.
+ *   Guesty's ownerRevenue is ignored — the commission rate configured per property
+ *   is the source of truth for commission-based units.
  *
  * Master Lease:
  *   Fixed monthly payout, prorated for the period
@@ -90,17 +90,12 @@ export function calculatePropertyFinancials(
 function calculateOwnerPayout(
   businessModel: BusinessModel,
   grossPayout: number,
-  actualOwnerPayout: number | null,
+  _actualOwnerPayout: number | null,
   commissionRate: number | null,
   fixedOwnerPayoutMonthly: number | null,
   period: DateRange
 ): number {
   if (businessModel === "commission") {
-    // Prefer actual owner payout from imported data
-    if (actualOwnerPayout !== null && actualOwnerPayout > 0) {
-      return actualOwnerPayout;
-    }
-    // Derive from commission rate
     const rate = commissionRate ?? 0;
     // Delmar keeps rate%, owner gets (1 - rate%)
     return grossPayout * (1 - rate);

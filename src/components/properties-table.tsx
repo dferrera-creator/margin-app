@@ -24,6 +24,7 @@ export function PropertiesTable({
   properties: PropertyFinancialSummary[];
 }) {
   const [search, setSearch] = useState("");
+  const [modelFilter, setModelFilter] = useState<"all" | "commission" | "master_lease">("all");
   const [sortKey, setSortKey] = useState<SortKey>("netUtilityMargin");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
@@ -40,6 +41,7 @@ export function PropertiesTable({
     .filter((p) =>
       p.propertyNickname.toLowerCase().includes(search.toLowerCase())
     )
+    .filter((p) => modelFilter === "all" || p.businessModel === modelFilter)
     .sort((a, b) => {
       const getValue = (item: PropertyFinancialSummary): string | number => {
         if (sortKey === "nickname") return item.propertyNickname;
@@ -75,14 +77,32 @@ export function PropertiesTable({
 
   return (
     <div className="space-y-4">
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search properties..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-9"
-        />
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative max-w-sm flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search properties..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <div className="flex items-center gap-1 rounded-md border p-1">
+          {(["all", "commission", "master_lease"] as const).map((model) => (
+            <button
+              key={model}
+              onClick={() => setModelFilter(model)}
+              className={cn(
+                "px-3 py-1 rounded text-sm transition-colors",
+                modelFilter === model
+                  ? "bg-primary text-primary-foreground"
+                  : "hover:bg-muted"
+              )}
+            >
+              {model === "all" ? "All" : model === "commission" ? "Commission" : "Master Lease"}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="rounded-md border overflow-x-auto">

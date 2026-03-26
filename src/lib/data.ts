@@ -111,7 +111,11 @@ export async function getPropertyFinancials(
 
 /**
  * Aggregate reservation data for a property in a date range.
- * Considers reservations where checkOut falls within the period.
+ *
+ * Prorates reservations that span period boundaries:
+ * If a reservation goes from Feb 15 to Mar 3 (16 nights), and the period
+ * is February, only the Feb 15-28 portion (14 nights) is counted.
+ * Income is divided proportionally by nights (payout / total_nights * nights_in_period).
  */
 async function getReservationSummary(
   propertyId: string,
@@ -127,14 +131,49 @@ async function getReservationSummary(
     },
   });
 
+  let nightsBooked = 0;
+  let staysBooked = 0;
+  let grossPayout = 0;
+  let ownerPayoutSum = 0;
+  let hasOwnerPayout = false;
+
+  for (const r of reservations) {
+    const totalNights = r.nightsBooked || 1;
+
+    // Clamp the reservation's stay to the period boundaries
+    // checkIn is the first night, checkOut is the departure day (not a night)
+    const effectiveStart = r.checkIn < period.start ? period.start : r.checkIn;
+    const effectiveEnd = r.checkOut > period.end ? period.end : r.checkOut;
+
+    // Nights in period = difference in days between effective start and effective end
+    const msPerDay = 1000 * 60 * 60 * 24;
+    const nightsInPeriod = Math.max(
+      0,
+      Math.round((effectiveEnd.getTime() - effectiveStart.getTime()) / msPerDay)
+    );
+
+    if (nightsInPeriod <= 0) continue;
+
+    // Proration factor: what fraction of this reservation falls in the period
+    const fraction = nightsInPeriod / totalNights;
+
+    nightsBooked += nightsInPeriod;
+    // Count a stay if the check-in falls within the period
+    staysBooked += r.checkIn >= period.start && r.checkIn <= period.end ? 1 : 0;
+    grossPayout += r.payoutAmount * fraction;
+
+    if (r.ownerPayoutAmount !== null) {
+      hasOwnerPayout = true;
+      ownerPayoutSum += r.ownerPayoutAmount * fraction;
+    }
+  }
+
   return {
     totalReservations: reservations.length,
-    nightsBooked: reservations.reduce((s, r) => s + r.nightsBooked, 0),
-    staysBooked: reservations.reduce((s, r) => s + r.staysBooked, 0),
-    grossPayout: reservations.reduce((s, r) => s + r.payoutAmount, 0),
-    actualOwnerPayout: reservations.some((r) => r.ownerPayoutAmount !== null)
-      ? reservations.reduce((s, r) => s + (r.ownerPayoutAmount ?? 0), 0)
-      : null,
+    nightsBooked,
+    staysBooked,
+    grossPayout,
+    actualOwnerPayout: hasOwnerPayout ? ownerPayoutSum : null,
   };
 }
 
