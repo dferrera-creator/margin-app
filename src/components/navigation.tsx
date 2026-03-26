@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { BarChart3, Building2, Settings, LayoutDashboard } from "lucide-react";
+import { BarChart3, Building2, Settings, LayoutDashboard, TableProperties } from "lucide-react";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/properties", label: "Properties", icon: Building2 },
+  { href: "/settings/bulk-edit", label: "Bulk Edit", icon: TableProperties },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
@@ -25,7 +26,9 @@ export function Navigation() {
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive =
-              pathname === item.href || pathname?.startsWith(item.href + "/");
+              item.href === "/settings"
+                ? pathname === "/settings"
+                : pathname === item.href || pathname?.startsWith(item.href + "/");
             return (
               <Link
                 key={item.href}

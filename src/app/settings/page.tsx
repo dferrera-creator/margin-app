@@ -12,7 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
-import { RefreshCw, Database, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { RefreshCw, Database, CheckCircle2, XCircle, Clock, TableProperties } from "lucide-react";
+import Link from "next/link";
 
 interface SyncJob {
   id: string;
@@ -162,7 +163,7 @@ export default function SettingsPage() {
           <CardContent className="space-y-3 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Database</span>
-              <span>SQLite (dev.db)</span>
+              <span>PostgreSQL</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Guesty API</span>
@@ -171,9 +172,16 @@ export default function SettingsPage() {
               </Badge>
             </div>
             <Separator />
+            <Link href="/settings/bulk-edit">
+              <Button variant="outline" className="w-full mt-2">
+                <TableProperties className="h-4 w-4 mr-2" />
+                Bulk Edit Expenses
+              </Button>
+            </Link>
             <p className="text-xs text-muted-foreground">
-              Property-level expense defaults and business model settings can be
-              configured on each property&apos;s detail page under Settings tab.
+              Edit estimated defaults or actual overrides for all properties at
+              once. Individual property settings are on each property&apos;s detail
+              page.
             </p>
           </CardContent>
         </Card>

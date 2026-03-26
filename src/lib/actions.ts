@@ -4,6 +4,38 @@ import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { startOfMonth, endOfMonth } from "date-fns";
 
+// ─── Types for bulk operations ───
+
+export interface BulkDefaultsRow {
+  propertyId: string;
+  defaultHousekeepingPerStay: number;
+  defaultLaundryPerStay: number;
+  defaultElectricityPerNight: number;
+  defaultWaterPerNight: number;
+  defaultGasPerNight: number;
+  internetMonthly: number;
+  hoaMonthly: number;
+  pmsSoftwareMonthly: number;
+  autorankMonthly: number;
+  rmsSoftwareMonthly: number;
+  messagingSoftwareMonthly: number;
+}
+
+export interface BulkOverridesRow {
+  propertyId: string;
+  housekeepingOverride: number | null;
+  laundryOverride: number | null;
+  electricityOverride: number | null;
+  waterOverride: number | null;
+  gasOverride: number | null;
+  internetOverride: number | null;
+  hoaOverride: number | null;
+  pmsSoftwareOverride: number | null;
+  autorankOverride: number | null;
+  rmsSoftwareOverride: number | null;
+  messagingSoftwareOverride: number | null;
+}
+
 /**
  * Update property settings (business model, commission rate, expense defaults, etc.)
  */
@@ -111,4 +143,54 @@ export async function resetExpenseOverride(
 
   revalidatePath(`/properties/${propertyId}`);
   revalidatePath("/dashboard");
+}
+
+/**
+ * Bulk update expense defaults (estimated costs) across multiple properties.
+ */
+export async function bulkSaveExpenseDefaults(rows: BulkDefaultsRow[]) {
+  for (const row of rows) {
+    const { propertyId, ...defaults } = row;
+    await prisma.property.update({
+      where: { id: propertyId },
+      data: defaults,
+    });
+  }
+
+  revalidatePath("/properties");
+  revalidatePath("/dashboard");
+  revalidatePath("/settings/bulk-edit");
+}
+
+/**
+ * Bulk update expense overrides (actual costs) across multiple properties for a month.
+ */
+export async function bulkSaveExpenseOverrides(
+  monthKey: string,
+  rows: BulkOverridesRow[]
+) {
+  const [year, month] = monthKey.split("-").map(Number);
+  const periodStart = startOfMonth(new Date(year, month - 1));
+  const periodEnd = endOfMonth(new Date(year, month - 1));
+
+  for (const row of rows) {
+    const { propertyId, ...overrides } = row;
+    await prisma.financialPeriodOverride.upsert({
+      where: {
+        propertyId_monthKey: { propertyId, monthKey },
+      },
+      create: {
+        propertyId,
+        monthKey,
+        periodStart,
+        periodEnd,
+        ...overrides,
+      },
+      update: overrides,
+    });
+  }
+
+  revalidatePath("/properties");
+  revalidatePath("/dashboard");
+  revalidatePath("/settings/bulk-edit");
 }
