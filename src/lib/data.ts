@@ -127,7 +127,7 @@ async function getReservationSummary(
       // Include reservations that overlap with the period
       checkOut: { gte: period.start },
       checkIn: { lte: period.end },
-      status: { not: "canceled" },
+      status: { notIn: ["canceled", "inquiry"] },
     },
   });
 
@@ -291,6 +291,7 @@ export async function getPropertyReservations(
       propertyId,
       checkOut: { gte: period.start },
       checkIn: { lte: period.end },
+      status: { notIn: ["canceled", "inquiry"] },
     },
     orderBy: { checkIn: "desc" },
   });
