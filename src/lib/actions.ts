@@ -36,6 +36,13 @@ export interface BulkOverridesRow {
   messagingSoftwareOverride: number | null;
 }
 
+export interface BulkBusinessModelRow {
+  propertyId: string;
+  businessModel: string;
+  commissionRate: number | null;
+  fixedOwnerPayoutMonthly: number | null;
+}
+
 /**
  * Update property settings (business model, commission rate, expense defaults, etc.)
  */
@@ -187,6 +194,26 @@ export async function bulkSaveExpenseOverrides(
         ...overrides,
       },
       update: overrides,
+    });
+  }
+
+  revalidatePath("/properties");
+  revalidatePath("/dashboard");
+  revalidatePath("/settings/bulk-edit");
+}
+
+/**
+ * Bulk update business model settings across multiple properties.
+ */
+export async function bulkSaveBusinessModels(rows: BulkBusinessModelRow[]) {
+  for (const row of rows) {
+    await prisma.property.update({
+      where: { id: row.propertyId },
+      data: {
+        businessModel: row.businessModel,
+        commissionRate: row.businessModel === "commission" ? row.commissionRate : null,
+        fixedOwnerPayoutMonthly: row.businessModel === "master_lease" ? row.fixedOwnerPayoutMonthly : null,
+      },
     });
   }
 

@@ -15,8 +15,13 @@ import { cn } from "@/lib/utils";
 import {
   bulkSaveExpenseDefaults,
   bulkSaveExpenseOverrides,
+  bulkSaveBusinessModels,
 } from "@/lib/actions";
-import type { BulkDefaultsRow, BulkOverridesRow } from "@/lib/actions";
+import type {
+  BulkDefaultsRow,
+  BulkOverridesRow,
+  BulkBusinessModelRow,
+} from "@/lib/actions";
 import { Save, Copy } from "lucide-react";
 
 // ─── Column definitions ───
@@ -55,6 +60,8 @@ interface PropertyData {
   id: string;
   nickname: string;
   businessModel: string;
+  commissionRate: number | null;
+  fixedOwnerPayoutMonthly: number | null;
   defaultHousekeepingPerStay: number;
   defaultLaundryPerStay: number;
   defaultElectricityPerNight: number;
@@ -89,7 +96,7 @@ interface Props {
   monthKey: string;
 }
 
-type TabMode = "defaults" | "overrides";
+type TabMode = "business_model" | "defaults" | "overrides";
 
 // ─── Component ───
 
@@ -100,8 +107,23 @@ export function BulkExpenseEditor({
 }: Props) {
   const [isPending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
-  const [tab, setTab] = useState<TabMode>("defaults");
+  const [tab, setTab] = useState<TabMode>("business_model");
   const [monthKey, setMonthKey] = useState(initialMonthKey);
+
+  // ── Business model state ──
+  const [bizModels, setBizModels] = useState<
+    Record<string, { businessModel: string; commissionRate: string; fixedOwnerPayoutMonthly: string }>
+  >(() => {
+    const state: Record<string, { businessModel: string; commissionRate: string; fixedOwnerPayoutMonthly: string }> = {};
+    for (const prop of properties) {
+      state[prop.id] = {
+        businessModel: prop.businessModel,
+        commissionRate: prop.commissionRate !== null ? String(prop.commissionRate) : "",
+        fixedOwnerPayoutMonthly: prop.fixedOwnerPayoutMonthly !== null ? String(prop.fixedOwnerPayoutMonthly) : "",
+      };
+    }
+    return state;
+  });
 
   // ── Defaults grid state ──
   const [defaults, setDefaults] = useState<Record<string, Record<string, string>>>(() => {
@@ -139,7 +161,7 @@ export function BulkExpenseEditor({
           ...prev,
           [propId]: { ...prev[propId], [colKey]: value },
         }));
-      } else {
+      } else if (tab === "overrides") {
         setOverrides((prev) => ({
           ...prev,
           [propId]: { ...prev[propId], [colKey]: value },
@@ -149,7 +171,6 @@ export function BulkExpenseEditor({
     [tab]
   );
 
-  // Fill an entire column with the value from the first property
   const fillColumnDown = useCallback(
     (colKey: string) => {
       const grid = tab === "defaults" ? defaults : overrides;
@@ -182,7 +203,18 @@ export function BulkExpenseEditor({
     startTransition(async () => {
       setSaved(false);
 
-      if (tab === "defaults") {
+      if (tab === "business_model") {
+        const rows: BulkBusinessModelRow[] = properties.map((prop) => {
+          const bm = bizModels[prop.id];
+          return {
+            propertyId: prop.id,
+            businessModel: bm.businessModel,
+            commissionRate: bm.commissionRate !== "" ? Number(bm.commissionRate) : null,
+            fixedOwnerPayoutMonthly: bm.fixedOwnerPayoutMonthly !== "" ? Number(bm.fixedOwnerPayoutMonthly) : null,
+          };
+        });
+        await bulkSaveBusinessModels(rows);
+      } else if (tab === "defaults") {
         const rows: BulkDefaultsRow[] = properties.map((prop) => ({
           propertyId: prop.id,
           defaultHousekeepingPerStay: Number(defaults[prop.id].defaultHousekeepingPerStay) || 0,
@@ -226,34 +258,40 @@ export function BulkExpenseEditor({
     });
   };
 
-  const columns = tab === "defaults" ? DEFAULT_COLUMNS : OVERRIDE_COLUMNS;
-  const grid = tab === "defaults" ? defaults : overrides;
+  const tabDescriptions: Record<TabMode, string> = {
+    business_model: "Configure business model (Commission or Master Lease) and payout rates for all properties.",
+    defaults: "Edit estimated expense rates (per-night, per-stay, monthly) across all properties at once.",
+    overrides: "Push actual monthly costs across all properties. Leave fields empty to use estimated values.",
+  };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Bulk Expense Editor</CardTitle>
-        <CardDescription>
-          Edit expense {tab === "defaults" ? "defaults (estimated rates)" : "overrides (actual costs)"} across all properties at once.
-          {tab === "overrides" && " Leave fields empty to use estimated values."}
-        </CardDescription>
+        <CardTitle className="text-base">Bulk Editor</CardTitle>
+        <CardDescription>{tabDescriptions[tab]}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Tab toggle + month selector */}
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-1 rounded-md border p-1">
-            {(["defaults", "overrides"] as const).map((mode) => (
+            {(
+              [
+                { key: "business_model", label: "Business Model" },
+                { key: "defaults", label: "Estimated Defaults" },
+                { key: "overrides", label: "Actual Overrides" },
+              ] as const
+            ).map((mode) => (
               <button
-                key={mode}
-                onClick={() => setTab(mode)}
+                key={mode.key}
+                onClick={() => setTab(mode.key)}
                 className={cn(
                   "px-3 py-1 rounded text-sm transition-colors",
-                  tab === mode
+                  tab === mode.key
                     ? "bg-primary text-primary-foreground"
                     : "hover:bg-muted"
                 )}
               >
-                {mode === "defaults" ? "Estimated Defaults" : "Actual Overrides"}
+                {mode.label}
               </button>
             ))}
           </div>
@@ -271,65 +309,197 @@ export function BulkExpenseEditor({
           )}
         </div>
 
-        {/* Spreadsheet grid */}
-        <div className="rounded-md border overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/50 text-muted-foreground">
-                <th className="text-left p-2 font-medium sticky left-0 bg-muted/50 min-w-[160px]">
-                  Property
-                </th>
-                {columns.map((col) => (
-                  <th key={col.key} className="p-2 font-medium min-w-[100px]">
-                    <div className="flex flex-col items-center gap-1">
-                      <span className="text-[11px]" title={col.label}>
-                        {col.short}
-                      </span>
-                      <button
-                        onClick={() => fillColumnDown(col.key)}
-                        className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
-                        title={`Fill all rows with first row's value`}
-                      >
-                        <Copy className="h-3 w-3" />
-                      </button>
-                    </div>
+        {/* ── Business Model Tab ── */}
+        {tab === "business_model" && (
+          <div className="rounded-md border overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/50 text-muted-foreground">
+                  <th className="text-left p-2 font-medium min-w-[160px]">
+                    Property
                   </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {properties.map((prop) => (
-                <tr key={prop.id} className="border-b hover:bg-muted/20">
-                  <td className="p-2 font-medium sticky left-0 bg-background">
-                    <div className="flex items-center gap-2">
-                      <span className="truncate max-w-[120px]">{prop.nickname}</span>
-                      <Badge
-                        variant={prop.businessModel === "commission" ? "secondary" : "outline"}
-                        className="text-[10px] shrink-0"
-                      >
-                        {prop.businessModel === "commission" ? "Comm" : "ML"}
-                      </Badge>
-                    </div>
-                  </td>
-                  {columns.map((col) => (
-                    <td key={col.key} className="p-1">
-                      <Input
-                        type="number"
-                        step="0.01"
-                        placeholder={tab === "overrides" ? "—" : "0"}
-                        value={grid[prop.id]?.[col.key] ?? ""}
-                        onChange={(e) =>
-                          updateCell(prop.id, col.key, e.target.value)
-                        }
-                        className="h-8 text-xs text-center w-[90px]"
-                      />
-                    </td>
-                  ))}
+                  <th className="p-2 font-medium min-w-[150px]">
+                    Business Model
+                  </th>
+                  <th className="p-2 font-medium min-w-[140px]">
+                    Commission Rate
+                  </th>
+                  <th className="p-2 font-medium min-w-[160px]">
+                    Fixed Monthly Payout
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {properties.map((prop) => {
+                  const bm = bizModels[prop.id];
+                  return (
+                    <tr key={prop.id} className="border-b hover:bg-muted/20">
+                      <td className="p-2 font-medium">
+                        <span className="truncate max-w-[140px] inline-block">
+                          {prop.nickname}
+                        </span>
+                      </td>
+                      <td className="p-1">
+                        <select
+                          value={bm.businessModel}
+                          onChange={(e) =>
+                            setBizModels((prev) => ({
+                              ...prev,
+                              [prop.id]: {
+                                ...prev[prop.id],
+                                businessModel: e.target.value,
+                              },
+                            }))
+                          }
+                          className="h-8 w-full rounded-md border border-input bg-background px-2 text-sm"
+                        >
+                          <option value="commission">Commission</option>
+                          <option value="master_lease">Master Lease</option>
+                        </select>
+                      </td>
+                      <td className="p-1">
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder={
+                            bm.businessModel === "commission"
+                              ? "e.g. 0.20"
+                              : "N/A"
+                          }
+                          disabled={bm.businessModel !== "commission"}
+                          value={bm.commissionRate}
+                          onChange={(e) =>
+                            setBizModels((prev) => ({
+                              ...prev,
+                              [prop.id]: {
+                                ...prev[prop.id],
+                                commissionRate: e.target.value,
+                              },
+                            }))
+                          }
+                          className={cn(
+                            "h-8 text-sm",
+                            bm.businessModel !== "commission" && "opacity-40"
+                          )}
+                        />
+                      </td>
+                      <td className="p-1">
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder={
+                            bm.businessModel === "master_lease"
+                              ? "e.g. 2500"
+                              : "N/A"
+                          }
+                          disabled={bm.businessModel !== "master_lease"}
+                          value={bm.fixedOwnerPayoutMonthly}
+                          onChange={(e) =>
+                            setBizModels((prev) => ({
+                              ...prev,
+                              [prop.id]: {
+                                ...prev[prop.id],
+                                fixedOwnerPayoutMonthly: e.target.value,
+                              },
+                            }))
+                          }
+                          className={cn(
+                            "h-8 text-sm",
+                            bm.businessModel !== "master_lease" && "opacity-40"
+                          )}
+                        />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* ── Defaults / Overrides Spreadsheet ── */}
+        {(tab === "defaults" || tab === "overrides") && (
+          <div className="rounded-md border overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/50 text-muted-foreground">
+                  <th className="text-left p-2 font-medium sticky left-0 bg-muted/50 min-w-[160px]">
+                    Property
+                  </th>
+                  {(tab === "defaults" ? DEFAULT_COLUMNS : OVERRIDE_COLUMNS).map(
+                    (col) => (
+                      <th
+                        key={col.key}
+                        className="p-2 font-medium min-w-[100px]"
+                      >
+                        <div className="flex flex-col items-center gap-1">
+                          <span className="text-[11px]" title={col.label}>
+                            {col.short}
+                          </span>
+                          <button
+                            onClick={() => fillColumnDown(col.key)}
+                            className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                            title="Fill all rows with first row's value"
+                          >
+                            <Copy className="h-3 w-3" />
+                          </button>
+                        </div>
+                      </th>
+                    )
+                  )}
+                </tr>
+              </thead>
+              <tbody>
+                {properties.map((prop) => {
+                  const grid =
+                    tab === "defaults" ? defaults : overrides;
+                  const columns =
+                    tab === "defaults" ? DEFAULT_COLUMNS : OVERRIDE_COLUMNS;
+                  return (
+                    <tr
+                      key={prop.id}
+                      className="border-b hover:bg-muted/20"
+                    >
+                      <td className="p-2 font-medium sticky left-0 bg-background">
+                        <div className="flex items-center gap-2">
+                          <span className="truncate max-w-[120px]">
+                            {prop.nickname}
+                          </span>
+                          <Badge
+                            variant={
+                              bizModels[prop.id]?.businessModel === "commission"
+                                ? "secondary"
+                                : "outline"
+                            }
+                            className="text-[10px] shrink-0"
+                          >
+                            {bizModels[prop.id]?.businessModel === "commission"
+                              ? "Comm"
+                              : "ML"}
+                          </Badge>
+                        </div>
+                      </td>
+                      {columns.map((col) => (
+                        <td key={col.key} className="p-1">
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder={tab === "overrides" ? "—" : "0"}
+                            value={grid[prop.id]?.[col.key] ?? ""}
+                            onChange={(e) =>
+                              updateCell(prop.id, col.key, e.target.value)
+                            }
+                            className="h-8 text-xs text-center w-[90px]"
+                          />
+                        </td>
+                      ))}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
 
         {/* Save button */}
         <div className="flex items-center gap-3 pt-2">
@@ -337,9 +507,11 @@ export function BulkExpenseEditor({
             <Save className="h-4 w-4 mr-2" />
             {isPending
               ? "Saving..."
-              : tab === "defaults"
-                ? "Save All Defaults"
-                : `Save All Overrides (${monthKey})`}
+              : tab === "business_model"
+                ? "Save All Business Models"
+                : tab === "defaults"
+                  ? "Save All Defaults"
+                  : `Save All Overrides (${monthKey})`}
           </Button>
           {saved && (
             <span className="text-sm text-green-600">

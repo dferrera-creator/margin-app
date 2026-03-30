@@ -18,6 +18,8 @@ export default async function BulkEditPage() {
       id: true,
       nickname: true,
       businessModel: true,
+      commissionRate: true,
+      fixedOwnerPayoutMonthly: true,
       defaultHousekeepingPerStay: true,
       defaultLaundryPerStay: true,
       defaultElectricityPerNight: true,

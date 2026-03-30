@@ -127,7 +127,7 @@ async function getReservationSummary(
       // Include reservations that overlap with the period
       checkOut: { gte: period.start },
       checkIn: { lte: period.end },
-      status: { notIn: ["canceled", "inquiry"] },
+      status: "confirmed",
     },
   });
 
