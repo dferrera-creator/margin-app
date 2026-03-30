@@ -44,6 +44,19 @@ export interface BulkBusinessModelRow {
 }
 
 /**
+ * Archive or unarchive a property.
+ */
+export async function setPropertyActive(propertyId: string, active: boolean) {
+  await prisma.property.update({
+    where: { id: propertyId },
+    data: { active },
+  });
+  revalidatePath(`/properties/${propertyId}`);
+  revalidatePath("/properties");
+  revalidatePath("/dashboard");
+}
+
+/**
  * Update property settings (business model, commission rate, expense defaults, etc.)
  */
 export async function updateProperty(

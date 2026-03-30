@@ -9,10 +9,16 @@ export const dynamic = "force-dynamic";
 export default async function PropertiesPage({
   searchParams,
 }: {
-  searchParams: { month?: string; start?: string; end?: string };
+  searchParams: {
+    month?: string;
+    start?: string;
+    end?: string;
+    archived?: string;
+  };
 }) {
   const period = parsePeriodFromParams(searchParams);
-  const data = await getDashboardData(period);
+  const includeArchived = searchParams.archived === "true";
+  const data = await getDashboardData(period, { includeArchived });
 
   return (
     <div className="space-y-6">
@@ -20,7 +26,7 @@ export default async function PropertiesPage({
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Properties</h1>
           <p className="text-muted-foreground">
-            {data.propertyCount} active properties
+            {data.propertyCount} properties
           </p>
         </div>
         <Suspense>
@@ -28,7 +34,10 @@ export default async function PropertiesPage({
         </Suspense>
       </div>
 
-      <PropertiesTable properties={data.properties} />
+      <PropertiesTable
+        properties={data.properties}
+        showArchiveControls
+      />
     </div>
   );
 }

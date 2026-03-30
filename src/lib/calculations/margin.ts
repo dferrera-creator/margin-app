@@ -24,6 +24,7 @@ interface MarginCalcInput {
   propertyId: string;
   propertyNickname: string;
   businessModel: BusinessModel;
+  active: boolean;
   commissionRate: number | null;
   fixedOwnerPayoutMonthly: number | null;
   period: DateRange;
@@ -57,6 +58,7 @@ export function calculatePropertyFinancials(
     propertyId: input.propertyId,
     propertyNickname: input.propertyNickname,
     businessModel,
+    active: input.active,
     period,
     totalReservations: reservationSummary.totalReservations,
     nightsBooked: reservationSummary.nightsBooked,

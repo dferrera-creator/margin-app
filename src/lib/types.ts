@@ -40,6 +40,7 @@ export interface PropertyFinancialSummary {
   propertyId: string;
   propertyNickname: string;
   businessModel: BusinessModel;
+  active: boolean;
   period: DateRange;
   // Reservation metrics
   totalReservations: number;

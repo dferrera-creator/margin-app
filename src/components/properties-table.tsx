@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
 import { formatCurrency, formatPercent, cn } from "@/lib/utils";
 import type { PropertyFinancialSummary } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown, Search, ExternalLink } from "lucide-react";
+import { ArrowUpDown, Search, ExternalLink, Download, Archive } from "lucide-react";
 
 type SortKey =
   | "nickname"
@@ -20,9 +21,15 @@ type SortKey =
 
 export function PropertiesTable({
   properties,
+  showArchiveControls = false,
 }: {
   properties: PropertyFinancialSummary[];
+  showArchiveControls?: boolean;
 }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const showArchived = searchParams.get("archived") === "true";
+
   const [search, setSearch] = useState("");
   const [modelFilter, setModelFilter] = useState<"all" | "commission" | "master_lease">("all");
   const [sortKey, setSortKey] = useState<SortKey>("netUtilityMargin");
@@ -35,6 +42,22 @@ export function PropertiesTable({
       setSortKey(key);
       setSortDir("desc");
     }
+  };
+
+  const toggleArchived = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (showArchived) {
+      params.delete("archived");
+    } else {
+      params.set("archived", "true");
+    }
+    router.push(`/properties?${params.toString()}`);
+  };
+
+  const handleDownload = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (showArchived) params.set("archived", "true");
+    window.open(`/api/export/properties?${params.toString()}`, "_blank");
   };
 
   const filtered = properties
@@ -103,6 +126,20 @@ export function PropertiesTable({
             </button>
           ))}
         </div>
+        {showArchiveControls && (
+          <Button
+            variant={showArchived ? "default" : "outline"}
+            size="sm"
+            onClick={toggleArchived}
+          >
+            <Archive className="h-4 w-4 mr-1" />
+            {showArchived ? "Hide Archived" : "Show Archived"}
+          </Button>
+        )}
+        <Button variant="outline" size="sm" onClick={handleDownload}>
+          <Download className="h-4 w-4 mr-1" />
+          Excel
+        </Button>
       </div>
 
       <div className="rounded-md border overflow-x-auto">
@@ -153,9 +190,21 @@ export function PropertiesTable({
               filtered.map((p) => (
                 <tr
                   key={p.propertyId}
-                  className="border-b hover:bg-muted/30 transition-colors"
+                  className={cn(
+                    "border-b hover:bg-muted/30 transition-colors",
+                    !p.active && "opacity-60"
+                  )}
                 >
-                  <td className="p-3 font-medium">{p.propertyNickname}</td>
+                  <td className="p-3 font-medium">
+                    <div className="flex items-center gap-2">
+                      {p.propertyNickname}
+                      {!p.active && (
+                        <Badge variant="destructive" className="text-[10px]">
+                          Archived
+                        </Badge>
+                      )}
+                    </div>
+                  </td>
                   <td className="p-3">
                     <Badge
                       variant={

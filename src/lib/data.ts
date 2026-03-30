@@ -25,10 +25,11 @@ import {
  * Get all active properties with their financials for a date range.
  */
 export async function getDashboardData(
-  period: DateRange
+  period: DateRange,
+  options?: { includeArchived?: boolean }
 ): Promise<DashboardSummary> {
   const properties = await prisma.property.findMany({
-    where: { active: true },
+    where: options?.includeArchived ? {} : { active: true },
     orderBy: { nickname: "asc" },
   });
 
@@ -101,6 +102,7 @@ export async function getPropertyFinancials(
     propertyId: property.id,
     propertyNickname: property.nickname,
     businessModel: property.businessModel as BusinessModel,
+    active: property.active,
     commissionRate: property.commissionRate,
     fixedOwnerPayoutMonthly: property.fixedOwnerPayoutMonthly,
     period,
