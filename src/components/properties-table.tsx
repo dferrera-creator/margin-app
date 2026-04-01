@@ -21,9 +21,11 @@ type SortKey =
 
 export function PropertiesTable({
   properties,
+  trendByProperty,
   showArchiveControls = false,
 }: {
   properties: PropertyFinancialSummary[];
+  trendByProperty?: Record<string, number | null>;
   showArchiveControls?: boolean;
 }) {
   const router = useRouter();
@@ -173,6 +175,7 @@ export function PropertiesTable({
                 <SortHeader label="Nights" sortField="nightsBooked" />
               </th>
               <th className="text-right p-3 font-medium">Stays</th>
+              <th className="text-right p-3 font-medium">Trend</th>
               <th className="p-3"></th>
             </tr>
           </thead>
@@ -180,7 +183,7 @@ export function PropertiesTable({
             {filtered.length === 0 ? (
               <tr>
                 <td
-                  colSpan={11}
+                  colSpan={12}
                   className="text-center py-8 text-muted-foreground"
                 >
                   No properties found
@@ -252,6 +255,19 @@ export function PropertiesTable({
                   </td>
                   <td className="p-3 text-right">{p.nightsBooked}</td>
                   <td className="p-3 text-right">{p.staysBooked}</td>
+                  <td
+                    className={cn(
+                      "p-3 text-right font-medium",
+                      (trendByProperty?.[p.propertyId] ?? 0) >= 0
+                        ? "text-green-700"
+                        : "text-red-600"
+                    )}
+                  >
+                    {trendByProperty?.[p.propertyId] === null ||
+                    trendByProperty?.[p.propertyId] === undefined
+                      ? "—"
+                      : `${trendByProperty[p.propertyId]! >= 0 ? "+" : ""}${formatCurrency(trendByProperty[p.propertyId]!)}`}
+                  </td>
                   <td className="p-3">
                     <Link href={`/properties/${p.propertyId}`}>
                       <Button variant="ghost" size="sm">

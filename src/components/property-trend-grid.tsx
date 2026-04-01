@@ -7,19 +7,16 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { formatCurrency, formatPercent, cn } from "@/lib/utils";
+import { formatCurrency, cn } from "@/lib/utils";
 import type { PropertyTrend } from "@/lib/types";
 import {
-  AreaChart,
-  Area,
   BarChart,
   Bar,
   XAxis,
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  CartesianGrid,
-  Legend,
+  CartesianGrid
 } from "recharts";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -27,8 +24,10 @@ import { ExternalLink } from "lucide-react";
 
 export function PropertyTrendGrid({
   trends,
+  showLinks = true,
 }: {
   trends: PropertyTrend[];
+  showLinks?: boolean;
 }) {
   if (trends.length === 0) {
     return (
@@ -68,11 +67,13 @@ export function PropertyTrendGrid({
                     {prop.businessModel === "commission" ? "Comm" : "ML"}
                   </Badge>
                 </div>
-                <Link href={`/properties/${prop.propertyId}`}>
-                  <Button variant="ghost" size="sm" className="h-7 px-2">
-                    <ExternalLink className="h-3 w-3" />
-                  </Button>
-                </Link>
+                {showLinks && (
+                  <Link href={`/properties/${prop.propertyId}`}>
+                    <Button variant="ghost" size="sm" className="h-7 px-2">
+                      <ExternalLink className="h-3 w-3" />
+                    </Button>
+                  </Link>
+                )}
               </div>
               {/* Current period KPIs */}
               {latest && (
@@ -158,6 +159,12 @@ export function PropertyTrendGrid({
                         dataKey="expenses"
                         name="Expenses"
                         fill="hsl(0, 70%, 60%)"
+                        radius={[2, 2, 0, 0]}
+                      />
+                      <Bar
+                        dataKey="margin"
+                        name="Margin"
+                        fill="hsl(142, 60%, 40%)"
                         radius={[2, 2, 0, 0]}
                       />
                     </BarChart>

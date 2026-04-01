@@ -1,10 +1,10 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Filter, X } from "lucide-react";
-import { useState } from "react";
+import { Check, Filter, X } from "lucide-react";
 
 interface PropertyOption {
   id: string;
@@ -20,34 +20,48 @@ export function DashboardFilters({
   const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
 
-  const selectedIds = searchParams.get("props")?.split(",").filter(Boolean) || [];
+  const selectedFromUrl = useMemo(
+    () => searchParams.get("props")?.split(",").filter(Boolean) || [],
+    [searchParams]
+  );
+  const [draftSelectedIds, setDraftSelectedIds] = useState<string[]>(selectedFromUrl);
+
+  useEffect(() => {
+    setDraftSelectedIds(selectedFromUrl);
+  }, [selectedFromUrl]);
+
   const compBack = searchParams.get("comp") || "1";
 
   const toggleProperty = (id: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    const current = new Set(selectedIds);
-    if (current.has(id)) {
-      current.delete(id);
-    } else {
-      current.add(id);
-    }
-    if (current.size === 0 || current.size === properties.length) {
-      params.delete("props");
-    } else {
-      params.set("props", Array.from(current).join(","));
-    }
-    router.push(`/dashboard?${params.toString()}`);
+    setDraftSelectedIds((current) => {
+      const selected = new Set(current);
+      if (selected.has(id)) {
+        selected.delete(id);
+      } else {
+        selected.add(id);
+      }
+      return Array.from(selected);
+    });
   };
 
   const clearFilter = () => {
+    setDraftSelectedIds([]);
     const params = new URLSearchParams(searchParams.toString());
     params.delete("props");
     router.push(`/dashboard?${params.toString()}`);
   };
 
   const selectAll = () => {
+    setDraftSelectedIds([]);
+  };
+
+  const applyFilter = () => {
     const params = new URLSearchParams(searchParams.toString());
-    params.delete("props");
+    if (draftSelectedIds.length === 0 || draftSelectedIds.length === properties.length) {
+      params.delete("props");
+    } else {
+      params.set("props", draftSelectedIds.join(","));
+    }
     router.push(`/dashboard?${params.toString()}`);
   };
 
@@ -61,7 +75,9 @@ export function DashboardFilters({
     router.push(`/dashboard?${params.toString()}`);
   };
 
-  const hasFilter = selectedIds.length > 0;
+  const hasFilter = selectedFromUrl.length > 0;
+  const hasDraftChanges =
+    [...draftSelectedIds].sort().join(",") !== [...selectedFromUrl].sort().join(",");
 
   return (
     <div className="space-y-3">
@@ -75,7 +91,7 @@ export function DashboardFilters({
           Filter Properties
           {hasFilter && (
             <span className="ml-1 bg-primary-foreground text-primary rounded-full px-1.5 text-xs font-bold">
-              {selectedIds.length}
+              {selectedFromUrl.length}
             </span>
           )}
         </Button>
@@ -112,22 +128,32 @@ export function DashboardFilters({
       </div>
 
       {open && (
-        <div className="rounded-md border p-3 bg-muted/30">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-xs font-medium text-muted-foreground">
-              Select properties to include:
-            </span>
-            <button
-              onClick={selectAll}
-              className="text-xs text-primary hover:underline"
+        <div className="rounded-md border p-3 bg-muted/30 space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-muted-foreground">
+                Select properties to include:
+              </span>
+              <button
+                onClick={selectAll}
+                className="text-xs text-primary hover:underline"
+              >
+                All
+              </button>
+            </div>
+            <Button
+              size="sm"
+              onClick={applyFilter}
+              disabled={!hasDraftChanges}
             >
-              All
-            </button>
+              <Check className="h-3 w-3 mr-1" />
+              Apply
+            </Button>
           </div>
           <div className="flex flex-wrap gap-2">
             {properties.map((p) => {
               const isSelected =
-                selectedIds.length === 0 || selectedIds.includes(p.id);
+                draftSelectedIds.length === 0 || draftSelectedIds.includes(p.id);
               return (
                 <button
                   key={p.id}

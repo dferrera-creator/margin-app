@@ -36,6 +36,12 @@ export async function syncListings(): Promise<SyncResult> {
 
     for (const raw of rawListings) {
       const mapped = mapListing(raw);
+
+      // Guardrail: skip malformed listings without stable Guesty IDs.
+      if (!mapped.guestyListingId) {
+        continue;
+      }
+
       await prisma.property.upsert({
         where: { guestyListingId: mapped.guestyListingId },
         create: {
@@ -101,8 +107,8 @@ export async function syncReservations(
     for (const raw of rawReservations) {
       const mapped = mapReservation(raw);
 
-      // Skip reservations with no listing ID (e.g. inquiries, cancelled without listing)
-      if (!mapped.guestyListingId) {
+      // Skip reservations with no stable Guesty IDs to preserve idempotency.
+      if (!mapped.guestyReservationId || !mapped.guestyListingId) {
         continue;
       }
 
