@@ -7,19 +7,16 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { formatCurrency, formatPercent, cn } from "@/lib/utils";
+import { formatCurrency, cn } from "@/lib/utils";
 import type { PropertyTrend } from "@/lib/types";
 import {
-  AreaChart,
-  Area,
   BarChart,
   Bar,
   XAxis,
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  CartesianGrid,
-  Legend,
+  CartesianGrid
 } from "recharts";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
