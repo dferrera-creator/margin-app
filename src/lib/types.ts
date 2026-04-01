@@ -101,3 +101,39 @@ export interface DashboardSummary {
   propertyCount: number;
   properties: PropertyFinancialSummary[];
 }
+
+/** KPI snapshot for a single month */
+export interface MonthKPI {
+  monthKey: string; // "2026-03"
+  grossPayout: number;
+  delmarRevenue: number;
+  totalOperatingExpenses: number;
+  netUtilityMargin: number;
+}
+
+/** Multi-month trend data for the dashboard */
+export interface DashboardTrendData {
+  /** Current period aggregated summary */
+  current: DashboardSummary;
+  /** Previous comparison period summary (for delta calculation) */
+  comparison: DashboardSummary | null;
+  /** Monthly KPIs for sparklines (last N months) */
+  monthlyKPIs: MonthKPI[];
+  /** Per-property monthly trends */
+  propertyTrends: PropertyTrend[];
+}
+
+/** Per-property trend across months */
+export interface PropertyTrend {
+  propertyId: string;
+  propertyNickname: string;
+  businessModel: BusinessModel;
+  months: {
+    monthKey: string;
+    grossPayout: number;
+    delmarRevenue: number;
+    totalOperatingExpenses: number;
+    netUtilityMargin: number;
+    utilityMarginPercentGross: number | null;
+  }[];
+}

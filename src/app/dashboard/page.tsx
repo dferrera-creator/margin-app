@@ -1,20 +1,45 @@
 import { Suspense } from "react";
-import { getDashboardData } from "@/lib/data";
+import { getDashboardTrendData, getAllProperties } from "@/lib/data";
 import { parsePeriodFromParams } from "@/lib/period";
 import { PeriodSelector } from "@/components/period-selector";
 import { DashboardCards } from "@/components/dashboard-cards";
+import { DashboardFilters } from "@/components/dashboard-filters";
 import { PropertiesTable } from "@/components/properties-table";
 import { MarginChart } from "@/components/margin-chart";
+import { PropertyTrendGrid } from "@/components/property-trend-grid";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: { month?: string; start?: string; end?: string };
+  searchParams: {
+    month?: string;
+    start?: string;
+    end?: string;
+    props?: string;
+    comp?: string;
+  };
 }) {
   const period = parsePeriodFromParams(searchParams);
-  const data = await getDashboardData(period);
+  const selectedProps = searchParams.props
+    ?.split(",")
+    .filter(Boolean) || [];
+  const compBack = Number(searchParams.comp) || 1;
+
+  const [trendData, allProperties] = await Promise.all([
+    getDashboardTrendData(period, {
+      propertyIds: selectedProps.length > 0 ? selectedProps : undefined,
+      comparisonMonthsBack: compBack,
+      trendMonths: 6,
+    }),
+    getAllProperties(),
+  ]);
+
+  const propertyOptions = allProperties.map((p) => ({
+    id: p.id,
+    nickname: p.nickname,
+  }));
 
   return (
     <div className="space-y-6">
@@ -30,15 +55,28 @@ export default async function DashboardPage({
         </Suspense>
       </div>
 
-      <DashboardCards data={data} />
+      <Suspense>
+        <DashboardFilters properties={propertyOptions} />
+      </Suspense>
+
+      <DashboardCards
+        current={trendData.current}
+        comparison={trendData.comparison}
+        monthlyKPIs={trendData.monthlyKPIs}
+      />
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <MarginChart properties={data.properties} />
+        <MarginChart properties={trendData.current.properties} />
+      </div>
+
+      <div>
+        <h2 className="text-xl font-semibold mb-4">Property Trends</h2>
+        <PropertyTrendGrid trends={trendData.propertyTrends} />
       </div>
 
       <div>
         <h2 className="text-xl font-semibold mb-4">Properties</h2>
-        <PropertiesTable properties={data.properties} />
+        <PropertiesTable properties={trendData.current.properties} />
       </div>
     </div>
   );

@@ -6,7 +6,7 @@
  */
 
 import { prisma } from "@/lib/db";
-import { format } from "date-fns";
+import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import type {
   BusinessModel,
   DateRange,
@@ -15,6 +15,9 @@ import type {
   PropertyExpenseDefaults,
   PropertyFinancialSummary,
   DashboardSummary,
+  DashboardTrendData,
+  MonthKPI,
+  PropertyTrend,
 } from "@/lib/types";
 import {
   calculateExpenses,
@@ -307,4 +310,147 @@ export async function getSyncJobs(limit = 20) {
     orderBy: { createdAt: "desc" },
     take: limit,
   });
+}
+
+/**
+ * Build dashboard trend data: current period, comparison period,
+ * monthly sparkline KPIs, and per-property monthly trends.
+ */
+export async function getDashboardTrendData(
+  currentPeriod: DateRange,
+  options?: {
+    includeArchived?: boolean;
+    propertyIds?: string[];
+    comparisonMonthsBack?: number; // default 1 = previous month
+    trendMonths?: number; // default 6
+  }
+): Promise<DashboardTrendData> {
+  const compBack = options?.comparisonMonthsBack ?? 1;
+  const trendMonths = options?.trendMonths ?? 6;
+
+  // Comparison period: same-length period shifted back
+  const compStart = subMonths(currentPeriod.start, compBack);
+  const compEnd = endOfMonth(compStart);
+  const comparisonPeriod: DateRange = {
+    start: startOfMonth(compStart),
+    end: compEnd,
+  };
+
+  // Build month ranges for sparkline
+  const monthRanges: { monthKey: string; range: DateRange }[] = [];
+  for (let i = trendMonths - 1; i >= 0; i--) {
+    const d = subMonths(currentPeriod.start, i);
+    monthRanges.push({
+      monthKey: format(d, "yyyy-MM"),
+      range: { start: startOfMonth(d), end: endOfMonth(d) },
+    });
+  }
+
+  // Fetch current + comparison summaries
+  const filterOpts = { includeArchived: options?.includeArchived };
+  const [currentFull, comparisonFull] = await Promise.all([
+    getDashboardData(currentPeriod, filterOpts),
+    getDashboardData(comparisonPeriod, filterOpts),
+  ]);
+
+  // Filter to selected properties if specified
+  const filterProps = (summary: DashboardSummary): DashboardSummary => {
+    if (!options?.propertyIds || options.propertyIds.length === 0)
+      return summary;
+    const filtered = summary.properties.filter((p) =>
+      options.propertyIds!.includes(p.propertyId)
+    );
+    return recomputeTotals(filtered);
+  };
+
+  const current = filterProps(currentFull);
+  const comparison = filterProps(comparisonFull);
+
+  // Build monthly KPIs for sparkline
+  const monthlyKPIs: MonthKPI[] = [];
+  // Property-level accumulator
+  const propMonthMap: Record<string, PropertyTrend["months"]> = {};
+
+  for (const { monthKey, range } of monthRanges) {
+    const monthData = await getDashboardData(range, filterOpts);
+    const filtered = filterProps(monthData);
+
+    monthlyKPIs.push({
+      monthKey,
+      grossPayout: filtered.totalGrossPayout,
+      delmarRevenue: filtered.totalDelmarRevenue,
+      totalOperatingExpenses: filtered.totalOperatingExpenses,
+      netUtilityMargin: filtered.totalUtilityMargin,
+    });
+
+    // Per-property trends
+    for (const p of filtered.properties) {
+      if (!propMonthMap[p.propertyId]) propMonthMap[p.propertyId] = [];
+      propMonthMap[p.propertyId].push({
+        monthKey,
+        grossPayout: p.grossPayout,
+        delmarRevenue: p.delmarRevenue,
+        totalOperatingExpenses: p.totalOperatingExpenses,
+        netUtilityMargin: p.netUtilityMargin,
+        utilityMarginPercentGross: p.utilityMarginPercentGross,
+      });
+    }
+  }
+
+  const propertyTrends: PropertyTrend[] = current.properties.map((p) => ({
+    propertyId: p.propertyId,
+    propertyNickname: p.propertyNickname,
+    businessModel: p.businessModel,
+    months: propMonthMap[p.propertyId] || [],
+  }));
+
+  return {
+    current,
+    comparison,
+    monthlyKPIs,
+    propertyTrends,
+  };
+}
+
+/** Recompute dashboard totals from a filtered property list */
+function recomputeTotals(
+  properties: PropertyFinancialSummary[]
+): DashboardSummary {
+  const totalGrossPayout = properties.reduce((s, p) => s + p.grossPayout, 0);
+  const totalDelmarRevenue = properties.reduce(
+    (s, p) => s + p.delmarRevenue,
+    0
+  );
+  const totalOperatingExpenses = properties.reduce(
+    (s, p) => s + p.totalOperatingExpenses,
+    0
+  );
+  const totalUtilityMargin = properties.reduce(
+    (s, p) => s + p.netUtilityMargin,
+    0
+  );
+  const validMargins = properties.filter(
+    (p) => p.utilityMarginPercentGross !== null
+  );
+  const averageUtilityMarginPercent =
+    validMargins.length > 0
+      ? Math.round(
+          (validMargins.reduce(
+            (s, p) => s + (p.utilityMarginPercentGross ?? 0),
+            0
+          ) /
+            validMargins.length) *
+            100
+        ) / 100
+      : null;
+
+  return {
+    totalGrossPayout: Math.round(totalGrossPayout * 100) / 100,
+    totalDelmarRevenue: Math.round(totalDelmarRevenue * 100) / 100,
+    totalOperatingExpenses: Math.round(totalOperatingExpenses * 100) / 100,
+    totalUtilityMargin: Math.round(totalUtilityMargin * 100) / 100,
+    averageUtilityMarginPercent,
+    propertyCount: properties.length,
+    properties,
+  };
 }
