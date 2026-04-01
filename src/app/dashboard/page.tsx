@@ -76,6 +76,8 @@ export default async function DashboardPage({
           }))}
         />
       </div>
+      </div>
+
 
       <div>
         <h2 className="text-xl font-semibold mb-4">Properties</h2>
