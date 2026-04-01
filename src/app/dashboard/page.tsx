@@ -6,7 +6,6 @@ import { DashboardCards } from "@/components/dashboard-cards";
 import { DashboardFilters } from "@/components/dashboard-filters";
 import { PropertiesTable } from "@/components/properties-table";
 import { MarginChart } from "@/components/margin-chart";
-import { PropertyTrendGrid } from "@/components/property-trend-grid";
 
 export const dynamic = "force-dynamic";
 
@@ -69,14 +68,24 @@ export default async function DashboardPage({
         <MarginChart properties={trendData.current.properties} />
       </div>
 
-      <div>
-        <h2 className="text-xl font-semibold mb-4">Property Trends</h2>
-        <PropertyTrendGrid trends={trendData.propertyTrends} />
-      </div>
 
       <div>
         <h2 className="text-xl font-semibold mb-4">Properties</h2>
-        <PropertiesTable properties={trendData.current.properties} />
+        <PropertiesTable
+          properties={trendData.current.properties}
+          trendByProperty={Object.fromEntries(
+            trendData.propertyTrends.map((trend) => {
+              const latest = trend.months[trend.months.length - 1];
+              const previous = trend.months[trend.months.length - 2];
+              const delta =
+                latest && previous
+                  ? latest.netUtilityMargin - previous.netUtilityMargin
+                  : null;
+
+              return [trend.propertyId, delta];
+            })
+          )}
+        />
       </div>
     </div>
   );
