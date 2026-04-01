@@ -11,7 +11,6 @@ import type { DashboardSummary, MonthKPI } from "@/lib/types";
 import {
   DollarSign,
   TrendingUp,
-  TrendingDown,
   Receipt,
   BarChart3,
   ArrowUpRight,
