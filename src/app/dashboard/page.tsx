@@ -6,6 +6,7 @@ import { DashboardCards } from "@/components/dashboard-cards";
 import { DashboardFilters } from "@/components/dashboard-filters";
 import { PropertiesTable } from "@/components/properties-table";
 import { MarginChart } from "@/components/margin-chart";
+import { DashboardMapGraph } from "@/components/dashboard-map-graph";
 
 export const dynamic = "force-dynamic";
 
@@ -66,6 +67,15 @@ export default async function DashboardPage({
 
       <div className="grid gap-6 lg:grid-cols-2">
         <MarginChart properties={trendData.current.properties} />
+        <DashboardMapGraph
+          properties={trendData.current.properties.map((p) => ({
+            propertyId: p.propertyId,
+            nickname: p.propertyNickname,
+            title: allProperties.find((ap) => ap.id === p.propertyId)?.title ?? null,
+            margin: p.netUtilityMargin,
+          }))}
+        />
+      </div>
       </div>
 
 
