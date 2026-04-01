@@ -86,6 +86,7 @@ export default async function DashboardPage({
         <DashboardMapGraph properties={mapGraphProperties} />
       </div>
 
+
       <div>
         <h2 className="text-xl font-semibold mb-4">Properties</h2>
         <PropertiesTable
