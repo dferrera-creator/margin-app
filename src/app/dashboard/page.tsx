@@ -22,9 +22,7 @@ export default async function DashboardPage({
   };
 }) {
   const period = parsePeriodFromParams(searchParams);
-  const selectedProps = searchParams.props
-    ?.split(",")
-    .filter(Boolean) || [];
+  const selectedProps = searchParams.props?.split(",").filter(Boolean) || [];
   const compBack = Number(searchParams.comp) || 1;
 
   const [trendData, allProperties] = await Promise.all([
@@ -41,14 +39,32 @@ export default async function DashboardPage({
     nickname: p.nickname,
   }));
 
+  const mapGraphProperties = trendData.current.properties.map((property) => ({
+    propertyId: property.propertyId,
+    nickname: property.propertyNickname,
+    title:
+      allProperties.find((candidate) => candidate.id === property.propertyId)
+        ?.title ?? null,
+    margin: property.netUtilityMargin,
+  }));
+
+  const trendByProperty = Object.fromEntries(
+    trendData.propertyTrends.map((trend) => {
+      const latest = trend.months[trend.months.length - 1];
+      const previous = trend.months[trend.months.length - 2];
+      const delta =
+        latest && previous ? latest.netUtilityMargin - previous.netUtilityMargin : null;
+
+      return [trend.propertyId, delta];
+    })
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">
-            Property-level financial overview
-          </p>
+          <p className="text-muted-foreground">Property-level financial overview</p>
         </div>
         <Suspense>
           <PeriodSelector />
@@ -67,15 +83,7 @@ export default async function DashboardPage({
 
       <div className="grid gap-6 lg:grid-cols-2">
         <MarginChart properties={trendData.current.properties} />
-        <DashboardMapGraph
-          properties={trendData.current.properties.map((p) => ({
-            propertyId: p.propertyId,
-            nickname: p.propertyNickname,
-            title: allProperties.find((ap) => ap.id === p.propertyId)?.title ?? null,
-            margin: p.netUtilityMargin,
-          }))}
-        />
-      </div>
+        <DashboardMapGraph properties={mapGraphProperties} />
       </div>
 
 
@@ -83,18 +91,7 @@ export default async function DashboardPage({
         <h2 className="text-xl font-semibold mb-4">Properties</h2>
         <PropertiesTable
           properties={trendData.current.properties}
-          trendByProperty={Object.fromEntries(
-            trendData.propertyTrends.map((trend) => {
-              const latest = trend.months[trend.months.length - 1];
-              const previous = trend.months[trend.months.length - 2];
-              const delta =
-                latest && previous
-                  ? latest.netUtilityMargin - previous.netUtilityMargin
-                  : null;
-
-              return [trend.propertyId, delta];
-            })
-          )}
+          trendByProperty={trendByProperty}
         />
       </div>
     </div>
