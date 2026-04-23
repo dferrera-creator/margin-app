@@ -7,6 +7,7 @@ import { DashboardFilters } from "@/components/dashboard-filters";
 import { PropertiesTable } from "@/components/properties-table";
 import { MarginChart } from "@/components/margin-chart";
 import { DashboardMapGraph } from "@/components/dashboard-map-graph";
+import { MarginDistributionChart } from "@/components/margin-distribution-chart";
 
 export const dynamic = "force-dynamic";
 
@@ -84,6 +85,10 @@ export default async function DashboardPage({
       <div className="grid gap-6 lg:grid-cols-2">
         <MarginChart properties={trendData.current.properties} />
         <DashboardMapGraph properties={mapGraphProperties} />
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <MarginDistributionChart properties={trendData.current.properties} />
       </div>
 
 
