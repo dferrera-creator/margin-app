@@ -75,6 +75,7 @@ export function calculatePropertyFinancials(
       delmarRevenue > 0
         ? round2((netUtilityMargin / delmarRevenue) * 100)
         : null,
+    revenuePotential: null,
   };
 }
 
