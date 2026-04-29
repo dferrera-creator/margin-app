@@ -59,6 +59,8 @@ export interface PropertyFinancialSummary {
   utilityMarginPercentGross: number | null;
   /** Margin as % of Delmar revenue */
   utilityMarginPercentDelmar: number | null;
+  /** 90% CI for revenue from remaining available nights */
+  revenuePotential: RevenuePotential | null;
 }
 
 /** Property defaults used for expense estimation */
@@ -89,6 +91,16 @@ export interface PeriodOverrides {
   autorankOverride: number | null;
   rmsSoftwareOverride: number | null;
   messagingSoftwareOverride: number | null;
+}
+
+/** 90% Confidence Interval for unrealized gross revenue from available nights */
+export interface RevenuePotential {
+  availableNights: number;
+  avgNightlyRate: number;
+  occupancyRate: number;
+  low: number;
+  mid: number;
+  high: number;
 }
 
 /** Dashboard-level aggregated summary */
