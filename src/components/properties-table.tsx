@@ -176,6 +176,7 @@ export function PropertiesTable({
               </th>
               <th className="text-right p-3 font-medium">Stays</th>
               <th className="text-right p-3 font-medium">Trend</th>
+              <th className="text-right p-3 font-medium">Rev Potential (90% CI)</th>
               <th className="p-3"></th>
             </tr>
           </thead>
@@ -183,7 +184,7 @@ export function PropertiesTable({
             {filtered.length === 0 ? (
               <tr>
                 <td
-                  colSpan={12}
+                  colSpan={13}
                   className="text-center py-8 text-muted-foreground"
                 >
                   No properties found
@@ -267,6 +268,18 @@ export function PropertiesTable({
                     trendByProperty?.[p.propertyId] === undefined
                       ? "—"
                       : `${trendByProperty[p.propertyId]! >= 0 ? "+" : ""}${formatCurrency(trendByProperty[p.propertyId]!)}`}
+                  </td>
+                  <td
+                    className="p-3 text-right text-muted-foreground text-xs"
+                    title={
+                      p.revenuePotential
+                        ? `90% CI · Avg rate: ${formatCurrency(p.revenuePotential.avgNightlyRate)}/night · ${p.revenuePotential.availableNights} available nights · ${Math.round(p.revenuePotential.occupancyRate * 100)}% historical occupancy`
+                        : undefined
+                    }
+                  >
+                    {p.revenuePotential
+                      ? `${formatCurrency(p.revenuePotential.low)} – ${formatCurrency(p.revenuePotential.high)}`
+                      : "—"}
                   </td>
                   <td className="p-3">
                     <Link href={`/properties/${p.propertyId}`}>

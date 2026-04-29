@@ -6,7 +6,7 @@
  */
 
 import { prisma } from "@/lib/db";
-import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
+import { format, startOfMonth, endOfMonth, subMonths, differenceInDays } from "date-fns";
 import type {
   BusinessModel,
   DateRange,
@@ -22,6 +22,7 @@ import type {
 import {
   calculateExpenses,
   calculatePropertyFinancials,
+  calculateRevenuePotential,
 } from "@/lib/calculations";
 
 /**
@@ -90,7 +91,10 @@ export async function getPropertyFinancials(
     where: { id: propertyId },
   });
 
-  const reservationSummary = await getReservationSummary(propertyId, period);
+  const [reservationSummary, historicalOccupancyRate] = await Promise.all([
+    getReservationSummary(propertyId, period),
+    getHistoricalOccupancyRate(propertyId, period),
+  ]);
   const overrides = await getOverrides(propertyId, period);
   const defaults = extractDefaults(property);
   const expenses = calculateExpenses(
@@ -101,7 +105,7 @@ export async function getPropertyFinancials(
     overrides
   );
 
-  return calculatePropertyFinancials({
+  const financials = calculatePropertyFinancials({
     propertyId: property.id,
     propertyNickname: property.nickname,
     businessModel: property.businessModel as BusinessModel,
@@ -112,6 +116,15 @@ export async function getPropertyFinancials(
     reservationSummary,
     expenses,
   });
+
+  const revenuePotential = calculateRevenuePotential(
+    reservationSummary.nightsBooked,
+    reservationSummary.grossPayout,
+    period,
+    historicalOccupancyRate
+  );
+
+  return { ...financials, revenuePotential };
 }
 
 /**
@@ -180,6 +193,46 @@ async function getReservationSummary(
     grossPayout,
     actualOwnerPayout: hasOwnerPayout ? ownerPayoutSum : null,
   };
+}
+
+/**
+ * Compute average occupancy rate over the 6 months prior to the current period.
+ * Returns nightsBooked / totalAvailableNights across that window.
+ */
+async function getHistoricalOccupancyRate(
+  propertyId: string,
+  period: DateRange
+): Promise<number> {
+  const windowStart = startOfMonth(subMonths(period.start, 6));
+  const windowEnd = period.start;
+
+  const reservations = await prisma.reservation.findMany({
+    where: {
+      propertyId,
+      status: "confirmed",
+      checkIn: { lt: windowEnd },
+      checkOut: { gt: windowStart },
+    },
+    select: { checkIn: true, checkOut: true, nightsBooked: true },
+  });
+
+  let totalNightsBooked = 0;
+  const msPerDay = 1000 * 60 * 60 * 24;
+
+  for (const r of reservations) {
+    const effectiveStart = r.checkIn < windowStart ? windowStart : r.checkIn;
+    const effectiveEnd = r.checkOut > windowEnd ? windowEnd : r.checkOut;
+    const nights = Math.max(
+      0,
+      Math.round((effectiveEnd.getTime() - effectiveStart.getTime()) / msPerDay)
+    );
+    totalNightsBooked += nights;
+  }
+
+  const totalAvailableDays = differenceInDays(windowEnd, windowStart);
+  if (totalAvailableDays <= 0) return 0;
+
+  return Math.min(1, totalNightsBooked / totalAvailableDays);
 }
 
 /**
